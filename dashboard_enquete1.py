@@ -7,14 +7,76 @@ st.set_page_config(page_title="Dashboard – Auto-Évaluation", page_icon="📋"
 
 st.markdown("""
 <style>
-.main{background:#f5f7fa}
-.block-container{padding-top:1.5rem}
-.metric-card{background:white;border-radius:12px;padding:18px 22px;
-             box-shadow:0 2px 8px rgba(0,0,0,.08);text-align:center}
-.metric-card h2{font-size:2.2rem;margin:0}
-.metric-card p{margin:0;color:#6b7280;font-size:.9rem}
-.stitle{font-size:1.1rem;font-weight:700;color:#1e3a5f;
-        border-left:4px solid #1a56db;padding-left:10px;margin:18px 0 10px}
+
+/* Police globale */
+html, body, [class*="css"], .stApp {
+    font-family: 'Century Gothic', sans-serif;
+}
+
+/* Fond principal */
+.main{
+    background:#f5f7fa;
+}
+
+/* Conteneur principal */
+.block-container{
+    padding-top:1.5rem;
+}
+
+/* Cartes KPI */
+.metric-card{
+    background:white;
+    border-radius:12px;
+    padding:18px 22px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+    text-align:center;
+}
+
+.metric-card h2{
+    font-size:2.2rem;
+    margin:0;
+    font-family:'Century Gothic', sans-serif;
+}
+
+.metric-card p{
+    margin:0;
+    color:#6b7280;
+    font-size:.9rem;
+    font-family:'Century Gothic', sans-serif;
+}
+
+/* Titres des sections */
+.stitle{
+    font-size:1.1rem;
+    font-weight:700;
+    color:#1e3a5f;
+    border-left:4px solid #1a56db;
+    padding-left:10px;
+    margin:18px 0 10px;
+    font-family:'Century Gothic', sans-serif;
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"] *{
+    font-family:'Century Gothic', sans-serif !important;
+}
+
+/* Onglets */
+button[data-baseweb="tab"]{
+    font-family:'Century Gothic', sans-serif !important;
+    font-weight:600;
+}
+
+/* Tableaux */
+[data-testid="stDataFrame"]{
+    font-family:'Century Gothic', sans-serif !important;
+}
+
+/* Boutons */
+.stButton button{
+    font-family:'Century Gothic', sans-serif !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
