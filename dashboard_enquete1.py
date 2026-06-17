@@ -7,76 +7,14 @@ st.set_page_config(page_title="Dashboard – Auto-Évaluation", page_icon="📋"
 
 st.markdown("""
 <style>
-
-/* Police globale */
-html, body, [class*="css"], .stApp {
-    font-family: 'Century Gothic', sans-serif;
-}
-
-/* Fond principal */
-.main{
-    background:#f5f7fa;
-}
-
-/* Conteneur principal */
-.block-container{
-    padding-top:1.5rem;
-}
-
-/* Cartes KPI */
-.metric-card{
-    background:white;
-    border-radius:12px;
-    padding:18px 22px;
-    box-shadow:0 2px 8px rgba(0,0,0,.08);
-    text-align:center;
-}
-
-.metric-card h2{
-    font-size:2.2rem;
-    margin:0;
-    font-family:'Century Gothic', sans-serif;
-}
-
-.metric-card p{
-    margin:0;
-    color:#6b7280;
-    font-size:.9rem;
-    font-family:'Century Gothic', sans-serif;
-}
-
-/* Titres des sections */
-.stitle{
-    font-size:1.1rem;
-    font-weight:700;
-    color:#1e3a5f;
-    border-left:4px solid #1a56db;
-    padding-left:10px;
-    margin:18px 0 10px;
-    font-family:'Century Gothic', sans-serif;
-}
-
-/* Sidebar */
-section[data-testid="stSidebar"] *{
-    font-family:'Century Gothic', sans-serif !important;
-}
-
-/* Onglets */
-button[data-baseweb="tab"]{
-    font-family:'Century Gothic', sans-serif !important;
-    font-weight:600;
-}
-
-/* Tableaux */
-[data-testid="stDataFrame"]{
-    font-family:'Century Gothic', sans-serif !important;
-}
-
-/* Boutons */
-.stButton button{
-    font-family:'Century Gothic', sans-serif !important;
-}
-
+.main{background:#f5f7fa}
+.block-container{padding-top:1.5rem}
+.metric-card{background:white;border-radius:12px;padding:18px 22px;
+             box-shadow:0 2px 8px rgba(0,0,0,.08);text-align:center}
+.metric-card h2{font-size:2.2rem;margin:0}
+.metric-card p{margin:0;color:#6b7280;font-size:.9rem}
+.stitle{font-size:1.1rem;font-weight:700;color:#1e3a5f;
+        border-left:4px solid #1a56db;padding-left:10px;margin:18px 0 10px}
 </style>
 """, unsafe_allow_html=True)
 
@@ -166,11 +104,13 @@ def pct(series, val):
 def bar_h(series, title, h=360):
     vc = series.value_counts().reset_index()
     vc.columns = ["Réponse", "N"]
+    total = vc["N"].sum()
+    vc["label"] = vc["N"].apply(lambda n: f"{n} ({n/total*100:.1f}%)")
     fig = px.bar(vc, y="Réponse", x="N", orientation="h", color="Réponse",
-                 color_discrete_sequence=COLORS, height=h, text="N", title=title)
+                 color_discrete_sequence=COLORS, height=h, text="label", title=title)
     fig.update_traces(textposition="outside")
     fig.update_layout(showlegend=False, plot_bgcolor="white", paper_bgcolor="white",
-                      yaxis_title="", xaxis_title="Répondants", margin=dict(t=45,b=20))
+                      yaxis_title="", xaxis_title="Répondants", margin=dict(t=45,b=20,r=110))
     return fig
 
 def bar_v(series, title, h=340, order=None):
@@ -179,11 +119,13 @@ def bar_v(series, title, h=340, order=None):
         vc = vc.reindex([o for o in order if o in vc.index])
     vc = vc.dropna().reset_index()
     vc.columns = ["Réponse", "N"]
+    total = vc["N"].sum()
+    vc["label"] = vc["N"].apply(lambda n: f"{n} ({n/total*100:.1f}%)")
     fig = px.bar(vc, x="Réponse", y="N", color="Réponse",
-                 color_discrete_sequence=COLORS, height=h, text="N", title=title)
+                 color_discrete_sequence=COLORS, height=h, text="label", title=title)
     fig.update_traces(textposition="outside")
     fig.update_layout(showlegend=False, plot_bgcolor="white", paper_bgcolor="white",
-                      xaxis_title="", yaxis_title="Répondants", margin=dict(t=45,b=20))
+                      xaxis_title="", yaxis_title="Répondants", margin=dict(t=60,b=20))
     return fig
 
 def donut(series, title, h=320):
@@ -199,11 +141,13 @@ def multi_bar(col_dict, title, h=380):
     counts = {lbl: int(dff[col].sum(skipna=True))
               for lbl, col in col_dict.items() if col in dff.columns}
     ser = pd.Series(counts).sort_values()
+    total = ser.sum()
+    labels = [f"{v} ({v/total*100:.1f}%)" if total > 0 else f"{v}" for v in ser.values]
     fig = px.bar(x=ser.values, y=ser.index, orientation="h", color=ser.index,
-                 color_discrete_sequence=COLORS, height=h, text=ser.values, title=title)
+                 color_discrete_sequence=COLORS, height=h, text=labels, title=title)
     fig.update_traces(textposition="outside")
     fig.update_layout(showlegend=False, plot_bgcolor="white", paper_bgcolor="white",
-                      yaxis_title="", xaxis_title="Répondants", margin=dict(t=45,b=20))
+                      yaxis_title="", xaxis_title="Répondants", margin=dict(t=45,b=20,r=130))
     return fig
 
 # ── KPIs ──────────────────────────────────────────────────────────────────────
@@ -296,14 +240,21 @@ with t3:
                         use_container_width=True)
     st.markdown('<div class="stitle">Analyse croisée : ancienneté × difficultés</div>',
                 unsafe_allow_html=True)
+    cross_n = dff.groupby(C["anciennete"])[C["difficultes"]].value_counts().unstack().fillna(0)
     cross = dff.groupby(C["anciennete"])[C["difficultes"]].value_counts(normalize=True).unstack().fillna(0)
     cross = cross.reindex([o for o in ORDER_ANC if o in cross.index])
+    cross_n = cross_n.reindex([o for o in ORDER_ANC if o in cross_n.index])
     if "Oui" in cross.columns:
-        fig = px.bar(cross.reset_index(), x=C["anciennete"], y="Oui",
+        plot_df = cross.reset_index()[[C["anciennete"], "Oui"]].rename(columns={"Oui": "Pct"})
+        plot_df["N"] = cross_n["Oui"].values if "Oui" in cross_n.columns else 0
+        plot_df["label"] = plot_df.apply(lambda r: f"{int(r['N'])} ({r['Pct']*100:.1f}%)", axis=1)
+        fig = px.bar(plot_df, x=C["anciennete"], y="Pct",
                      title="Taux de difficultés au remplissage par ancienneté",
-                     color_discrete_sequence=["#f59e0b"], height=360, text_auto=".0%")
+                     color_discrete_sequence=["#f59e0b"], height=360, text="label")
+        fig.update_traces(textposition="outside")
         fig.update_layout(plot_bgcolor="white", paper_bgcolor="white",
-                          xaxis_title="", yaxis_title="Part (%)", margin=dict(t=45,b=20))
+                          xaxis_title="", yaxis_title="Part (%)",
+                          yaxis_tickformat=".0%", margin=dict(t=60,b=20))
         st.plotly_chart(fig, use_container_width=True)
     st.markdown('<div class="stitle">Hésitation à déposer la fiche</div>',
                 unsafe_allow_html=True)
@@ -314,12 +265,18 @@ with t3:
     with c2:
         cross2 = dff.groupby(C["anciennete"])[C["hesitation"]].value_counts().unstack().fillna(0)
         cross2 = cross2.reindex([o for o in ORDER_ANC if o in cross2.index])
-        fig = px.bar(cross2.reset_index(), x=C["anciennete"],
-                     y=[c for c in ["Oui", "Non"] if c in cross2.columns],
+        cross2_pct = cross2.div(cross2.sum(axis=1), axis=0) * 100
+        df_plot = cross2.reset_index().melt(id_vars=C["anciennete"], var_name="Réponse", value_name="N")
+        df_pct  = cross2_pct.reset_index().melt(id_vars=C["anciennete"], var_name="Réponse", value_name="Pct")
+        df_plot = df_plot.merge(df_pct, on=[C["anciennete"], "Réponse"])
+        df_plot = df_plot[df_plot["Réponse"].isin(["Oui", "Non"])]
+        df_plot["label"] = df_plot.apply(lambda r: f"{int(r['N'])} ({r['Pct']:.0f}%)", axis=1)
+        fig = px.bar(df_plot, x=C["anciennete"], y="N", color="Réponse",
                      barmode="group", title="Hésitation par ancienneté",
-                     color_discrete_sequence=["#ef4444", "#10b981"], height=360,
-                     labels={"value": "Nombre", C["anciennete"]: ""})
-        fig.update_layout(plot_bgcolor="white", paper_bgcolor="white", margin=dict(t=45,b=20))
+                     color_discrete_map={"Oui": "#ef4444", "Non": "#10b981"}, height=360,
+                     text="label", labels={"N": "Nombre", C["anciennete"]: ""})
+        fig.update_traces(textposition="outside")
+        fig.update_layout(plot_bgcolor="white", paper_bgcolor="white", margin=dict(t=60,b=20))
         st.plotly_chart(fig, use_container_width=True)
 
 # ── TAB 4 ─────────────────────────────────────────────────────────────────────
